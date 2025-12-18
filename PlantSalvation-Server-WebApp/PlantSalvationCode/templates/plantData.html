@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<link rel="stylesheet" href="static/plantStyle.css">
+
+<head>
+    <title>Plant Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+        }
+
+        .chart-container {
+            width: 600px;
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Plant Sensor Readings</h1>
+<div class="dashboard">
+    <div class="chart-container">
+        <canvas id="tempChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="humidityChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="soilChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="lightChart"></canvas>
+    </div>
+</div>
+
+<script>
+let charts = {};
+
+// Create chart once
+function initChart(elementId, label) {
+    const ctx = document.getElementById(elementId);
+
+    charts[elementId] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: label,
+                data: [],
+                borderWidth: 2,
+                tension: 0.3
+            }]
+        },
+        // options: {
+        //     scales: {
+        //         y: {
+        //             min: 0,
+        //             max: 100
+        //         }
+        //     }
+        // }
+    });
+}
+
+
+// Update chart data
+function updateChart(chart, labels, values) {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = values;
+    chart.update();
+}
+
+// Fetch latest data
+async function fetchData() {
+    const response = await fetch("/api/data");
+    const data = await response.json();
+
+    updateChart(
+        charts.tempChart,
+        data.temp.labels,
+        data.temp.values
+    );
+
+    updateChart(
+        charts.humidityChart,
+        data.humidity.labels,
+        data.humidity.values
+    );
+
+    updateChart(
+        charts.soilChart,
+        data.moisturePercent.labels,
+        data.moisturePercent.values
+    );
+
+    updateChart(
+        charts.lightChart,
+        data.brightnessPercent.labels,
+        data.brightnessPercent.values
+    );
+}
+
+// Initialize charts
+initChart("tempChart", "Temperature (°F)");
+initChart("humidityChart", "Humidity (%)");
+initChart("soilChart", "Soil Moisture (%)");
+initChart("lightChart", "Light Level (%)");
+
+// Initial load
+fetchData();
+
+// Poll every 5 seconds
+setInterval(fetchData, 5000);
+</script>
+
+
+</body>
+</html>
